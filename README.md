@@ -22,10 +22,4 @@ There's currently a memory leak in here. The `pending-rpc-calls` map
 for each RPC service is never cleaned of unhandled messages. Purging
 those wouldn't be too difficult to put in place.
 
-The `rpc/service` function should probably be a macro,
-`defrpc-service`, which would `defn` the RPC call fn (instead of
-returning it) and maybe `def` the `pending-rpc-calls` and
-`response-queue-name` (to allow you to get a handle on them in a REPL
-instead of closing over them in that `let`).
-
 And, of course, the `web.rpc` namespace should be it's own library.
