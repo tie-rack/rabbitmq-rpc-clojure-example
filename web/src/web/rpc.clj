@@ -21,7 +21,7 @@
                   response-queue-name
                   (fn [ch {:keys [correlation-id]} ^bytes payload]
                     (when-let [response-promise (@pending-rpc-calls correlation-id)]
-                      (deliver response-promise (String. payload))
+                      (deliver response-promise (clojure.edn/read-string (String. payload)))
                       (swap! pending-rpc-calls dissoc correlation-id)))
                   {:auto-ack true})
     (fn [arg]

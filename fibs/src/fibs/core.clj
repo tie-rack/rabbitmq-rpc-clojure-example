@@ -10,10 +10,14 @@
 (def fibs-queue-name "fibs.get")
 
 (defn fib [n]
-  (loop [a 0 b 1 n n]
-    (if (zero? n)
-      a
-      (recur b (+ a b) (dec n)))))
+  (try
+    (let [fib-n (loop [a 0 b 1 n n]
+                  (if (zero? n)
+                    a
+                    (recur b (+ a b) (dec n))))]
+      [:ok fib-n])
+    (catch java.lang.ArithmeticException _
+      [:out-of-bounds n])))
 
 (defn -main [& _]
   (let [connection (rmq/connect)
