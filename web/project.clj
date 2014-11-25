@@ -8,7 +8,8 @@
                  [org.slf4j/jcl-over-slf4j "1.7.7"]
                  [org.slf4j/log4j-over-slf4j "1.7.7"]
                  [com.novemberain/langohr "3.0.0-rc4"]
-                 [org.clojure/core.match "0.2.1"]]
+                 [org.clojure/core.match "0.2.1"]
+                 [manifold "0.1.0-beta3"]]
   :min-lein-version "2.0.0"
   :resource-paths ["config", "resources"]
   :profiles {:dev {:aliases {"run-dev" ["trampoline" "run" "-m" "web.server/run-dev"]}

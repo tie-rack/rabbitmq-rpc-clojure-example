@@ -5,21 +5,28 @@
             [io.pedestal.http.route.definition :refer [defroutes]]
             [ring.util.response :as ring-resp]
             [web.rpc :as rpc]
-            [clojure.core.match :refer [match]]))
+            [clojure.core.match :refer [match]]
+            [manifold.deferred :as d]))
 
 (def get-fib (rpc/service "fibs.get"))
 (def get-fact (rpc/service "fact.get"))
 
-(defn render-service-response [response]
+(defn resp->body [response]
   (match response
-    [:ok n] n
-    [:out-of-bounds _] "More than too much"
-    [:timeout msg] msg))
+         [:ok n] n
+         [:out-of-bounds _] "More than too much"))
+
+(defn render-service-response [deferred]
+  (-> deferred
+      (d/chain resp->body)
+      (d/timeout! 100 "Too slow!")
+      (d/catch Exception (fn [e] e))
+      deref))
 
 (defn number-info [request]
   (let [n (Integer/parseInt (get-in request [:path-params :n]))
-        fib (-> n get-fib (deref 100 [:timeout "No fib response available"]))
-        fact (-> n get-fact (deref 100 [:timeout "No factorial response available"]))]
+        fib (get-fib n)
+        fact (get-fact n)]
     (ring-resp/response (str "fib: " (render-service-response fib)
                              "\nfact: " (render-service-response fact)))))
 

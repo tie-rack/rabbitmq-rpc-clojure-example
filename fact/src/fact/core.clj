@@ -15,6 +15,11 @@
     (catch java.lang.ArithmeticException _
       [:out-of-bounds n])))
 
+(defn ->resp [f]
+  (try [:ok (f)]
+       (catch Exception _
+         [:error])))
+
 (defn -main [& _]
   (let [connection (rmq/connect)
         channel (lch/open connection)]
@@ -26,5 +31,5 @@
                   (fn [ch {:keys [reply-to correlation-id]} ^bytes payload]
                     (let [request (String. payload "UTF-8")
                           n (edn/read-string request)]
-                      (lb/publish ch "" reply-to (pr-str (fact n)) {:correlation-id correlation-id})))
+                      (lb/publish ch "" reply-to (pr-str (->resp #(fact n))) {:correlation-id correlation-id})))
                   {:auto-ack true})))
