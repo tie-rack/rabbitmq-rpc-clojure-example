@@ -10,19 +10,18 @@
 (def fibs-queue-name "fibs.get")
 
 (defn fib [n]
-  (try
-    (let [fib-n (loop [a 0 b 1 n n]
-                  (if (zero? n)
-                    a
-                    (recur b (+ a b) (dec n))))]
-      [:ok fib-n])
-    (catch java.lang.ArithmeticException _
-      [:out-of-bounds n])))
+  (let [fib-n (loop [a 0 b 1 n n]
+                (if (zero? n)
+                  a
+                  (recur b (+ a b) (dec n))))]
+    fib-n))
 
-(defn ->resp [f]
-  (try [:ok (f)]
+(defn ->resp [n]
+  (try [:ok (fib n)]
+       (catch java.lang.ArithmeticException _
+         [:error :out-of-bound])
        (catch Exception _
-         [:error])))
+         [:error :unknown])))
 
 (defn -main [& _]
   (let [connection (rmq/connect)
@@ -35,5 +34,5 @@
                   (fn [ch {:keys [reply-to correlation-id]} ^bytes payload]
                     (let [request (String. payload "UTF-8")
                           n (edn/read-string request)]
-                      (lb/publish ch "" reply-to (pr-str (->resp #(fib n))) {:correlation-id correlation-id})))
+                      (lb/publish ch "" reply-to (pr-str (->resp n)) {:correlation-id correlation-id})))
                   {:auto-ack true})))

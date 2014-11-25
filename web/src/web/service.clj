@@ -11,24 +11,21 @@
 (def get-fib (rpc/service "fibs.get"))
 (def get-fact (rpc/service "fact.get"))
 
-(defn resp->body [response]
-  (match response
-         [:ok n] n
-         [:out-of-bounds _] "More than too much"))
-
 (defn render-service-response [deferred]
   (-> deferred
-      (d/chain resp->body)
       (d/timeout! 100 "Too slow!")
-      (d/catch Exception (fn [e] e))
+      (d/catch clojure.lang.ExceptionInfo (fn [e] [:error (-> e ex-data :type)]))
       deref))
 
 (defn number-info [request]
   (let [n (Integer/parseInt (get-in request [:path-params :n]))
         fib (get-fib n)
-        fact (get-fact n)]
+        fact (get-fact n)
+        sum (-> (d/zip fib fact)
+                (d/chain #(apply + %)))]
     (ring-resp/response (str "fib: " (render-service-response fib)
-                             "\nfact: " (render-service-response fact)))))
+                             "\nfact: " (render-service-response fact)
+                             "\nsum: " (render-service-response sum)))))
 
 (defroutes routes
   [[["/number-info/:n"

@@ -26,7 +26,7 @@
                       (let [resp (clojure.edn/read-string (String. payload))]
                         (match resp
                                [:ok r] (d/success! response-promise r)
-                               [:error] (d/error! response-promise (Exception. "badness"))))
+                               [:error e] (d/error! response-promise (ex-info (str e) {:type e}))))
                       (swap! pending-rpc-calls dissoc correlation-id)))
                   {:auto-ack true})
     (fn [arg]

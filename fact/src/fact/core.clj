@@ -10,15 +10,14 @@
 (def fact-queue-name "fact.get")
 
 (defn fact [n]
-  (try
-    [:ok (reduce * 1 (range 1 (inc n)))]
-    (catch java.lang.ArithmeticException _
-      [:out-of-bounds n])))
+  (reduce * 1 (range 1 (inc n))))
 
-(defn ->resp [f]
-  (try [:ok (f)]
-       (catch Exception _
-         [:error])))
+(defn ->resp [n]
+  (try [:ok (fact n)]
+       (catch java.lang.ArithmeticException _
+         [:error :out-of-bounds])
+       (catch Throwable _
+         [:error :unknown])))
 
 (defn -main [& _]
   (let [connection (rmq/connect)
@@ -31,5 +30,5 @@
                   (fn [ch {:keys [reply-to correlation-id]} ^bytes payload]
                     (let [request (String. payload "UTF-8")
                           n (edn/read-string request)]
-                      (lb/publish ch "" reply-to (pr-str (->resp #(fact n))) {:correlation-id correlation-id})))
+                      (lb/publish ch "" reply-to (pr-str (->resp n)) {:correlation-id correlation-id})))
                   {:auto-ack true})))
