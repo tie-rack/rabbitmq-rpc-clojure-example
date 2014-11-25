@@ -10,7 +10,10 @@
 (def fact-queue-name "fact.get")
 
 (defn fact [n]
-  (reduce * 1 (range 1 (inc n))))
+  (try
+    [:ok (reduce * 1 (range 1 (inc n)))]
+    (catch java.lang.ArithmeticException _
+      [:out-of-bounds n])))
 
 (defn -main [& _]
   (let [connection (rmq/connect)
