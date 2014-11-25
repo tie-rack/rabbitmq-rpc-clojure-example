@@ -4,11 +4,11 @@
             [io.pedestal.http.body-params :as body-params]
             [io.pedestal.http.route.definition :refer [defroutes]]
             [ring.util.response :as ring-resp]
-            [web.rpc :as rpc]
+            [web.rpc :refer [defservice]]
             [clojure.core.match :refer [match]]))
 
-(def get-fib (rpc/service "fibs.get"))
-(def get-fact (rpc/service "fact.get"))
+(defservice fib-service "fibs.get")
+(defservice fact-service "fact.get")
 
 (defn render-service-response [response]
   (match response
@@ -18,8 +18,8 @@
 
 (defn number-info [request]
   (let [n (Integer/parseInt (get-in request [:path-params :n]))
-        fib (-> n get-fib (deref 100 [:timeout "No fib response available"]))
-        fact (-> n get-fact (deref 100 [:timeout "No factorial response available"]))]
+        fib (-> n fib-service (deref 100 [:timeout "No fib response available"]))
+        fact (-> n fact-service (deref 100 [:timeout "No factorial response available"]))]
     (ring-resp/response (str "fib: " (render-service-response fib)
                              "\nfact: " (render-service-response fact)))))
 
