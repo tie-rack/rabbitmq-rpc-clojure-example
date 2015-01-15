@@ -5,6 +5,7 @@
             [io.pedestal.http.route.definition :refer [defroutes]]
             [ring.util.response :as ring-resp]
             [web.rpc :refer [defservice]]
+            [web.time :refer [timer]]
             [clojure.core.match :refer [match]]))
 
 (defservice fib-service "fibs.get")
@@ -17,6 +18,13 @@
     [:timeout msg] msg
     _ "Unknown error"))
 
+(defn render-whole-service-response [response]
+  (match response
+    [:ok n] [n 200]
+    [:out-of-bounds _] ["More than too much" 400]
+    [:timeout msg] [msg 500]
+    _ ["Unknown error" 500]))
+
 (defn number-info [request]
   (let [n (Integer/parseInt (get-in request [:path-params :n]))
         fib-promise (fib-service n)
@@ -26,8 +34,26 @@
     (ring-resp/response (str "fib: " (render-service-response fib)
                              "\nfact: " (render-service-response fact)))))
 
+(defn time-service-call [service-fn arg]
+  (timer
+   (-> (service-fn arg)
+       (deref 100 [:timeout (str "No response available")]))))
+
+(defn make-api-interceptor [service-fn request-param render-fn]
+  (fn [request]
+    (let [num (Integer/parseInt (get-in request request-param))
+          [an-answer time] (time-service-call service-fn num)
+          [final-response status] (render-fn an-answer)]
+      (-> (ring-resp/response (str "answer: " final-response ", time: " time))
+          (ring-resp/status status)))))
+
+(def fibs-interceptor (make-api-interceptor fib-service [:path-params :n] render-whole-service-response))
+(def fact-interceptor (make-api-interceptor fact-service [:path-params :n] render-whole-service-response))
+
 (defroutes routes
-  [[["/number-info/:n"
+  [[["/fibs/:n" {:get fibs-interceptor}]
+    ["/fact/:n" {:get fact-interceptor}]
+    ["/number-info/:n"
      ^:constraints {:n #"[0-9]+"}
      {:get number-info}]]])
 
