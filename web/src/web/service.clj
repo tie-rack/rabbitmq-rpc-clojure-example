@@ -14,12 +14,15 @@
   (match response
     [:ok n] n
     [:out-of-bounds _] "More than too much"
-    [:timeout msg] msg))
+    [:timeout msg] msg
+    _ "Unknown error"))
 
 (defn number-info [request]
   (let [n (Integer/parseInt (get-in request [:path-params :n]))
-        fib (-> n fib-service (deref 100 [:timeout "No fib response available"]))
-        fact (-> n fact-service (deref 100 [:timeout "No factorial response available"]))]
+        fib-promise (fib-service n)
+        fact-promise (fact-service n)
+        fib (deref fib-promise 100 [:timeout "No fib response available"])
+        fact (deref fact-promise 100 [:timeout "No fact response available"])]
     (ring-resp/response (str "fib: " (render-service-response fib)
                              "\nfact: " (render-service-response fact)))))
 

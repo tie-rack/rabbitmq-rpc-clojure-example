@@ -13,7 +13,9 @@
   (try
     [:ok (reduce * 1 (range 1 (inc n)))]
     (catch java.lang.ArithmeticException _
-      [:out-of-bounds n])))
+      [:out-of-bounds n])
+    (catch Exception _
+      [:error "Unhandled exception"])))
 
 (defn -main [& _]
   (let [connection (rmq/connect)
