@@ -1,11 +1,10 @@
 (ns fact.core
   (:gen-class)
-  (:require [clojure.edn :as edn]
-            [langohr.core :as rmq]
+  (:require [langohr.core :as rmq]
             [langohr.channel :as lch]
             [langohr.consumers :as lc]
             [langohr.queue :as lq]
-            [langohr.basic :as lb]))
+            [democracyworks.kehaar :as kehaar]))
 
 (def fact-queue-name "fact.get")
 
@@ -23,8 +22,5 @@
                 {:exclusive false :auto-delete true})
     (lc/subscribe channel
                   fact-queue-name
-                  (fn [ch {:keys [reply-to correlation-id]} ^bytes payload]
-                    (let [request (String. payload "UTF-8")
-                          n (edn/read-string request)]
-                      (lb/publish ch "" reply-to (pr-str (fact n)) {:correlation-id correlation-id})))
+                  (kehaar/simple-responder fact)
                   {:auto-ack true})))
