@@ -1,6 +1,7 @@
 (ns web.server
   (:gen-class)
   (:require [io.pedestal.http :as server]
+            [web.rpc :as rpc]
             [web.service :as service]))
 
 (defonce runnable-service (server/create-server service/service))
@@ -9,6 +10,7 @@
   "The entry-point for 'lein run-dev'"
   [& args]
   (println "\nCreating your [DEV] server...")
+  (rpc/initialize)
   (-> service/service
       (merge {:env :dev
               ::server/join? false
@@ -23,4 +25,5 @@
   "The entry-point for 'lein run'"
   [& args]
   (println "\nCreating your server...")
+  (rpc/initialize)
   (server/start runnable-service))
