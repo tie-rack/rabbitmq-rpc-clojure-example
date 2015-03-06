@@ -15,19 +15,6 @@
     [:out-of-bounds _] "More than too much"
     [:timeout msg] msg))
 
-(defn get-or-timeout [ch timeout message]
-  (async/go
-    (or (first (async/alts! [ch (async/timeout timeout)]))
-        [:timeout message])))
-
-(defn number-info [request]
-  (let [fib-channel (:fib-channel request)
-        fact-channel (:fact-channel request)
-        fib (get-or-timeout fib-channel 1000 "No fibs available!")
-        fact (get-or-timeout fact-channel 1000 "No fact available!")]
-    (ring-resp/response (str "fib: " (render-service-response (async/<!! fib))
-                             "\nfact: " (render-service-response (async/<!! fact))))))
-
 (defbefore parse-n
   [ctx]
   (let [n (Integer/parseInt (get-in ctx [:request :path-params :n]))]
@@ -44,6 +31,20 @@
   (let [n (get-in ctx [:request :n])
         fact-response-channel (rpc/fact-request n)]
     (assoc-in ctx [:request :fact-channel] fact-response-channel)))
+
+(defn get-or-timeout [ch timeout message]
+  (async/go
+    (or (first (async/alts! [ch (async/timeout timeout)]))
+        [:timeout message])))
+
+(defn number-info [request]
+  (let [fib-channel (:fib-channel request)
+        fact-channel (:fact-channel request)
+        fib (get-or-timeout fib-channel 1000 "No fibs available!")
+        fact (get-or-timeout fact-channel 1000 "No fact available!")]
+    (ring-resp/response (str "fib: " (render-service-response (async/<!! fib))
+                             "\nfact: " (render-service-response (async/<!! fact))
+                             "\n"))))
 
 (defroutes routes
   [[["/number-info/:n"

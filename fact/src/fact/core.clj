@@ -6,9 +6,8 @@
             [langohr.queue :as lq]
             [democracyworks.kehaar :as kehaar]))
 
-(def fact-queue-name "fact.get")
-
 (defn fact [n]
+  (println "Calculating fact" n)
   (try
     [:ok (reduce * 1 (range 1 (inc n)))]
     (catch java.lang.ArithmeticException _
@@ -16,7 +15,8 @@
 
 (defn -main [& _]
   (let [connection (rmq/connect)
-        channel (lch/open connection)]
+        channel (lch/open connection)
+        fact-queue-name "fact.get"]
     (lq/declare channel
                 fact-queue-name
                 {:exclusive false :auto-delete true})
